@@ -138,11 +138,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   <!-- 登録 -->
   <div id="tab-scan">
     <div class="page-header"><div class="page-title">家計簿</div><div class="page-sub">レシートを撮影して品目登録</div></div>
-    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event)">
-    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-      <i class="ti ti-camera"></i>
-      <div class="uz-title">レシートを撮影 / 選択</div>
-      <div class="uz-sub">タップしてカメラを起動</div>
+    <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event)">
+    <input type="file" id="file-input-library" accept="image/*" style="display:none" onchange="handleFile(event)">
+    <div id="upload-zone">
+      <div class="upload-zone" style="margin-bottom:8px" onclick="document.getElementById('file-input-camera').click()">
+        <i class="ti ti-camera"></i>
+        <div class="uz-title">カメラで撮影</div>
+        <div class="uz-sub">レシートを今すぐ撮影する</div>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('file-input-library').click()">
+        <i class="ti ti-photo"></i>
+        <div class="uz-title">写真を選択</div>
+        <div class="uz-sub">カメラロールから選ぶ</div>
+      </div>
     </div>
     <div id="preview-wrap" style="display:none">
       <img id="preview-img" class="preview-img" alt="プレビュー">
@@ -357,7 +365,7 @@ function handleFile(e){
   reader.onload=ev=>{imgBase64=ev.target.result.split(',')[1];document.getElementById('preview-img').src=ev.target.result;document.getElementById('upload-zone').style.display='none';document.getElementById('preview-wrap').style.display='block';};
   reader.readAsDataURL(file);
 }
-function resetUpload(){imgBase64=null;document.getElementById('file-input').value='';document.getElementById('upload-zone').style.display='';document.getElementById('preview-wrap').style.display='none';}
+function resetUpload(){imgBase64=null;document.getElementById('file-input-camera').value='';document.getElementById('file-input-library').value='';document.getElementById('upload-zone').style.display='';document.getElementById('preview-wrap').style.display='none';}
 
 const PROMPT=`あなたは日本語レシート読み取り専門AIです。JSONのみ返してください（説明・マークダウン不要）。
 ルール: 半角カタカナ→全角, 記号除去(◆*#), 数量分離, confidence付与
