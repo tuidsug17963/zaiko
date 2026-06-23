@@ -488,12 +488,26 @@ function handleFile(e) {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    chatImageBase64 = ev.target.result.split(',')[1];
-    const preview = document.getElementById('chat-image-preview');
-    document.getElementById('chat-preview-img').src = ev.target.result;
-    preview.style.display = 'block';
-    // 画像選択したら自動送信
-    sendChat();
+    // 画像をリサイズしてAPIサイズ制限内に収める
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 1200; // 長辺の最大px
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const resized = canvas.toDataURL('image/jpeg', 0.82);
+      chatImageBase64 = resized.split(',')[1];
+      document.getElementById('chat-preview-img').src = resized;
+      document.getElementById('chat-image-preview').style.display = 'block';
+      console.log(`画像リサイズ: ${img.width}x${img.height} → ${w}x${h}, base64長: ${chatImageBase64.length}`);
+      sendChat();
+    };
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -638,7 +652,12 @@ JSONを出力した後は必ず「この内容でよければ「確認画面へ�
         messages: chatHistory
       })
     });
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API ${res.status}: ${errBody.slice(0,200)}`);
+    }
     const data = await res.json();
+    if (data.error) throw new Error(`Claude: ${data.error.message}`);
     const replyText = data.content.map(c => c.text || '').join('');
 
     // 会話履歴に追加
@@ -674,7 +693,8 @@ JSONを出力した後は必ず「この内容でよければ「確認画面へ�
 
   } catch (err) {
     removeTyping();
-    addMessage('claude', 'エラーが発生しました。もう一度お試しください。');
+    addMessage('claude', `エラー詳細: ${err.message}<br>type: ${err.name}`);
+    console.error('Chat error:', err);
   }
 
   isChatLoading = false;
